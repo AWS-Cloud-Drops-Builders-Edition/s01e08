@@ -6,17 +6,17 @@ import random
 suffix = random.randrange(200, 900)
 boto3_session = boto3.session.Session()
 region_name = boto3_session.region_name
-iam_client = boto3_session.client('iam')
-account_number = boto3.client('sts').get_caller_identity().get('Account')
-identity = boto3.client('sts').get_caller_identity()['Arn']
+iam_client = boto3_session.client("iam")
+account_number = boto3.client("sts").get_caller_identity().get("Account")
+identity = boto3.client("sts").get_caller_identity()["Arn"]
 
 encryption_policy_name = f"bedrock-sample-rag-sp-{suffix}"
 network_policy_name = f"bedrock-sample-rag-np-{suffix}"
-access_policy_name = f'bedrock-sample-rag-ap-{suffix}'
-bedrock_execution_role_name = f'AmazonBedrockExecutionRoleForKnowledgeBase_{suffix}'
-fm_policy_name = f'AmazonBedrockFoundationModelPolicyForKnowledgeBase_{suffix}'
-s3_policy_name = f'AmazonBedrockS3PolicyForKnowledgeBase_{suffix}'
-oss_policy_name = f'AmazonBedrockOSSPolicyForKnowledgeBase_{suffix}'
+access_policy_name = f"bedrock-sample-rag-ap-{suffix}"
+bedrock_execution_role_name = f"AmazonBedrockExecutionRoleForKnowledgeBase_{suffix}"
+fm_policy_name = f"AmazonBedrockFoundationModelPolicyForKnowledgeBase_{suffix}"
+s3_policy_name = f"AmazonBedrockS3PolicyForKnowledgeBase_{suffix}"
+oss_policy_name = f"AmazonBedrockOSSPolicyForKnowledgeBase_{suffix}"
 
 
 def create_bedrock_execution_role(bucket_name):
@@ -73,24 +73,24 @@ def create_bedrock_execution_role(bucket_name):
     fm_policy = iam_client.create_policy(
         PolicyName=fm_policy_name,
         PolicyDocument=json.dumps(foundation_model_policy_document),
-        Description='Policy for accessing foundation model',
+        Description="Policy for accessing foundation model",
     )
 
     s3_policy = iam_client.create_policy(
         PolicyName=s3_policy_name,
         PolicyDocument=json.dumps(s3_policy_document),
-        Description='Policy for reading documents from s3')
+        Description="Policy for reading documents from s3")
 
     # Cria a execution role para o Amazon Bedrock
     bedrock_kb_execution_role = iam_client.create_role(
         RoleName=bedrock_execution_role_name,
         AssumeRolePolicyDocument=json.dumps(assume_role_policy_document),
-        Description='Amazon Bedrock Knowledge Base Execution Role for accessing OSS and S3',
+        Description="Amazon Bedrock Knowledge Base Execution Role for accessing OSS and S3",
         MaxSessionDuration=3600
     )
 
-    # Recupera os arn's das políticas e da role criada acima
-    bedrock_kb_execution_role_arn = bedrock_kb_execution_role['Role']['Arn']
+    # Recupera os arn"s das políticas e da role criada acima
+    bedrock_kb_execution_role_arn = bedrock_kb_execution_role["Role"]["Arn"]
     s3_policy_arn = s3_policy["Policy"]["Arn"]
     fm_policy_arn = fm_policy["Policy"]["Arn"]
 
@@ -124,7 +124,7 @@ def create_oss_policy_attach_bedrock_execution_role(collection_id, bedrock_kb_ex
     oss_policy = iam_client.create_policy(
         PolicyName=oss_policy_name,
         PolicyDocument=json.dumps(oss_policy_document),
-        Description='Policy for accessing opensearch serverless',
+        Description="Policy for accessing opensearch serverless",
     )
     oss_policy_arn = oss_policy["Policy"]["Arn"]
     print("Opensearch serverless arn: ", oss_policy_arn)
@@ -141,53 +141,53 @@ def create_policies_in_oss(vector_store_name, aoss_client, bedrock_kb_execution_
         name=encryption_policy_name,
         policy=json.dumps(
             {
-                'Rules': [{'Resource': ['collection/' + vector_store_name],
-                           'ResourceType': 'collection'}],
-                'AWSOwnedKey': True
+                "Rules": [{"Resource": ["collection/" + vector_store_name],
+                           "ResourceType": "collection"}],
+                "AWSOwnedKey": True
             }),
-        type='encryption'
+        type="encryption"
     )
 
     network_policy = aoss_client.create_security_policy(
         name=network_policy_name,
         policy=json.dumps(
             [
-                {'Rules': [{'Resource': ['collection/' + vector_store_name],
-                            'ResourceType': 'collection'}],
-                 'AllowFromPublic': True}
+                {"Rules": [{"Resource": ["collection/" + vector_store_name],
+                            "ResourceType": "collection"}],
+                 "AllowFromPublic": True}
             ]),
-        type='network'
+        type="network"
     )
     access_policy = aoss_client.create_access_policy(
         name=access_policy_name,
         policy=json.dumps(
             [
                 {
-                    'Rules': [
+                    "Rules": [
                         {
-                            'Resource': ['collection/' + vector_store_name],
-                            'Permission': [
-                                'aoss:CreateCollectionItems',
-                                'aoss:DeleteCollectionItems',
-                                'aoss:UpdateCollectionItems',
-                                'aoss:DescribeCollectionItems'],
-                            'ResourceType': 'collection'
+                            "Resource": ["collection/" + vector_store_name],
+                            "Permission": [
+                                "aoss:CreateCollectionItems",
+                                "aoss:DeleteCollectionItems",
+                                "aoss:UpdateCollectionItems",
+                                "aoss:DescribeCollectionItems"],
+                            "ResourceType": "collection"
                         },
                         {
-                            'Resource': ['index/' + vector_store_name + '/*'],
-                            'Permission': [
-                                'aoss:CreateIndex',
-                                'aoss:DeleteIndex',
-                                'aoss:UpdateIndex',
-                                'aoss:DescribeIndex',
-                                'aoss:ReadDocument',
-                                'aoss:WriteDocument'],
-                            'ResourceType': 'index'
+                            "Resource": ["index/" + vector_store_name + "/*"],
+                            "Permission": [
+                                "aoss:CreateIndex",
+                                "aoss:DeleteIndex",
+                                "aoss:UpdateIndex",
+                                "aoss:DescribeIndex",
+                                "aoss:ReadDocument",
+                                "aoss:WriteDocument"],
+                            "ResourceType": "index"
                         }],
-                    'Principal': [identity, bedrock_kb_execution_role_arn],
-                    'Description': 'Easy data policy'}
+                    "Principal": [identity, bedrock_kb_execution_role_arn],
+                    "Description": "Easy data policy"}
             ]),
-        type='data'
+        type="data"
     )
     return encryption_policy, network_policy, access_policy
 
